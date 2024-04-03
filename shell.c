@@ -6,6 +6,7 @@ int main(int argc, char **argv) {
   } else {
     return runTests();
   }
+  
 }
 
 // interactive shell to process commands
