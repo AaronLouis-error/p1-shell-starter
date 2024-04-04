@@ -34,28 +34,22 @@ int interactiveShell() {
 
 void processLine(char *line) {
   printf("processing line: %s\n", line);
-  printf(line + '\n'); // might not need extra new line
 
   // Tokonize
   char *arguments[MAX_ARGS];
-  // initalize array with NULL values
-  for (int i = 0; i < MAX_ARGS; i++) {
-    arguments[i] = NULL;
-  }
-  char *token;
-  token = strtok(line, " ");
-  arguments[0] = token;
-  int i = 1;
-  while (token != NULL) {
-    token = strtok(NULL, " ,\0");
-    arguments[i] = token;
-    i++;
-  }
+  tokenize(line, arguments);
+
   // check if tokenizing is working
   for (int i = 0; i < 3; i++) {
     if (arguments[i] != NULL) {
       char *line = arguments[i];
       printf("\t %s\n", line);
+      if (equal(line, "&")) {
+        printf("\tasynchronus\n");
+      }
+      if (equal(line, ";") || equal(line, "|")) {
+        printf("\tblocking call\n");
+      }
     }
   }
 
@@ -103,6 +97,22 @@ void processLine(char *line) {
   //   }
   //   exit(EXIT_SUCCESS);
   // }
+}
+
+void tokenize(char *line, char **arguments) {
+  // initalize array with NULL values
+  for (int i = 0; i < MAX_ARGS; i++) {
+    arguments[i] = NULL;
+  }
+  char *token;
+  token = strtok(line, " ");
+  arguments[0] = token;
+  int i = 1;
+  while (token != NULL) {
+    token = strtok(NULL, " ,\0");
+    arguments[i] = token;
+    i++;
+  }
 }
 
 int runTests() {
