@@ -34,28 +34,23 @@ int interactiveShell() {
 
 void processLine(char *line) {
   printf("processing line: %s\n", line);
-  // printf("before while loop\n");
   printf(line + '\n'); // might not need extra new line
-  //  todo: tokenize
+
+  // Tokonize
   char *arguments[MAX_ARGS];
-  for (int i = 0; i < MAX_ARGS;
-       i++) { // fixes error: variable-sized object may not be initialized
+  // initalize array with NULL values
+  for (int i = 0; i < MAX_ARGS; i++) {
     arguments[i] = NULL;
   }
-
-  int i = 1;
   char *token;
   token = strtok(line, " ");
   arguments[0] = token;
-
+  int i = 1;
   while (token != NULL) {
     token = strtok(NULL, " ,\0");
-    // printf("test\n");
-    // printf("Token: %s\n", token);
     arguments[i] = token;
     i++;
   }
-
   // check if tokenizing is working
   for (int i = 0; i < 3; i++) {
     if (arguments[i] != NULL) {
