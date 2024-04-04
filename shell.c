@@ -37,7 +37,6 @@ void processLine(char *line) {
   // printf("before while loop\n");
   printf(line + '\n'); // might not need extra new line
   //  todo: tokenize
-
   char *arguments[MAX_ARGS];
   for (int i = 0; i < MAX_ARGS;
        i++) { // fixes error: variable-sized object may not be initialized
@@ -60,7 +59,8 @@ void processLine(char *line) {
   // check if tokenizing is working
   for (int i = 0; i < 3; i++) {
     if (arguments[i] != NULL) {
-      printf(arguments[i] + '\n');
+      char *line = arguments[i];
+      printf("\t %s\n", line);
     }
   }
 }
