@@ -36,16 +36,17 @@ void processLine(char *line) {
   printf("processing line: %s\n", line);
 
   // Tokonize
-  char *arguments[MAX_ARGS];
-  tokenize(line, arguments);
+  char *arguments1[MAX_ARGS];
+  char *arguments2[MAX_ARGS];
+  tokenize(line, arguments1, arguments2);
 
-  runProcess(arguments);
+  runProcess(arguments1, arguments2, false);
 
   // check if tokenizing is working
   // todo: change forking behavior according to this
   for (int i = 0; i < 3; i++) {
-    if (arguments[i] != NULL) {
-      char *line = arguments[i];
+    if (arguments1[i] != NULL) {
+      char *line = arguments1[i];
       printf("\t %s\n", line);
       if (equal(line, "&")) {
         printf("\tasynchronus\n");
@@ -55,64 +56,13 @@ void processLine(char *line) {
       }
     }
   }
-
-  // ls
-
-  // ls -al
-  // ls ls -al
-
-  // ls ls &
-
-  // todo: blocking or asyncronus call?
-  // this is the logic for ls execlp("/bin/ls", "ls", "-l", NULL);
-
-  // enum {READ, WRITE};
-  //   pid_t pid;
-  //   int pipeFD[2];
-
-  //   if (pipe(pipeFD) < 0)
-  //   {
-  //     perror("Error in creating pipe");
-  //     exit(EXIT_FAILURE);
-  //   }
-
-  //     printf("pipe[read] %d\n", pipeFD[READ]);
-  //     printf("pipe[write] %d\n", pipeFD[WRITE]);
-
-  //   pid = fork();
-  //   if (pid < 0)
-  //   {
-  //     perror("Error during fork");
-  //     exit(EXIT_FAILURE);
-  //   }
-
-  //   if (pid == 0)  //Child
-  //   {
-  //     close(pipeFD[READ]);
-  //     dup2(pipeFD[WRITE], 1);   //stdout is now child's read pipe
-  //     execlp("/bin/ls", "ls", "-l", NULL);
-  //     // process is overlayed so does not execut past here...
-  //   }
-  //   else   //Parent
-  //   {
-  //     wait( NULL );
-  //     char buf[BUF_SIZE];
-  //     close(pipeFD[WRITE]);
-  //     int n = read(pipeFD[READ], buf, BUF_SIZE);
-  //     buf[n] = '\0';
-  //     for (int i = 0; i < n; ++i)
-  //       printf("%c", buf[i]);
-  //     // cout << buf;
-  //     printf("Parent exiting\n");
-  //   }
-  //   exit(EXIT_SUCCESS);
-  // }
 }
 
-void tokenize(char *line, char **arguments) {
+void tokenize(char *line, char **arguments, char **arguments2) {
   // initalize array with NULL values
   for (int i = 0; i < MAX_ARGS; i++) {
-    arguments[i] = NULL;
+    arguments1[i] = NULL;
+    arguments2[i] = NULL;
   }
   char *token;
   token = strtok(line, " ");
@@ -125,7 +75,7 @@ void tokenize(char *line, char **arguments) {
   }
 }
 
-void runProcess(char **arguments) {
+void runProcess(char **arguments1, char **arguments2, bool isBlocking) {
   enum { READ, WRITE };
   pid_t pid;
   int pipeFD[2];
@@ -150,18 +100,36 @@ void runProcess(char **arguments) {
     dup2(pipeFD[WRITE], 1); // stdout is now child's read pipe
     char *location = NULL;
     // printf("%s\n", arguments[1]);
-    execlp(arguments[0], arguments[0], arguments[1], NULL);
+    execlp(arguments1[0], arguments1[0], arguments1[1], NULL);
     // process is overlayed so does not execut past here...
-  } else // Parent
-  {
-    wait(NULL);
-    char buf[BUF_SIZE];
-    close(pipeFD[WRITE]);
-    int n = read(pipeFD[READ], buf, BUF_SIZE);
-    buf[n] = '\0';
-    for (int i = 0; i < n; ++i)
-      printf("%c", buf[i]);
-    // cout << buf;
+    return;
+  }
+  // Parent
+  if (arguments2 != NULL) {
+    pid = fork();
+    if (pid < 0) {
+      perror("Error during fork");
+      exit(EXIT_FAILURE);
+    }
+
+    if (pid == 0) // Child
+    {
+      close(pipeFD[READ]);
+      dup2(pipeFD[WRITE], 1); // stdout is now child's read pipe
+      char *location = NULL;
+      // printf("%s\n", arguments[1]);
+      execlp(arguments1[0], arguments1[0], arguments1[1], NULL);
+      // process is overlayed so does not execut past here...
+      return;
+    }
+  }
+  wait(NULL);
+  char buf[BUF_SIZE];
+  close(pipeFD[WRITE]);
+  int n = read(pipeFD[READ], buf, BUF_SIZE);
+  buf[n] = '\0';
+  for (int i = 0; i < n; ++i) {
+    printf("%c", buf[i]);
   }
 }
 
