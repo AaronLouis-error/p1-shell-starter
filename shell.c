@@ -6,11 +6,11 @@ int main(int argc, char **argv) {
   } else {
     return runTests();
   }
-  
 }
 
 // interactive shell to process commands
 int interactiveShell() {
+  printf("interactive Shell");
   bool should_run = true;
   char *line = calloc(1, MAXLINE);
   while (should_run) {
@@ -32,7 +32,33 @@ int interactiveShell() {
   return 0;
 }
 
-void processLine(char *line) { printf("processing line: %s\n", line); }
+void processLine(char *line) {
+  printf("processing line: %s\n", line);
+  // printf("before while loop\n");
+  printf(line + '\n'); // might not need extra new line
+  //  todo: tokenize
+  char *arguments[MAX_ARGS];
+  int i = 1;
+  char *token;
+  token = strtok(line, " ");
+  arguments[0] = token;
+
+  while (token != NULL) {
+    token = strtok(NULL, " ,\0");
+    // printf("test\n");
+    // printf("Token: %s\n", token);
+    arguments[i] = token;
+    i++;
+  }
+
+  // check if tokenizing is working
+
+  for (int i = 0; i < 3; i++) {
+    if (arguments[i] != NULL) {
+      printf('\t' + arguments[i] + '\n');
+    }
+  }
+}
 
 int runTests() {
   printf("*** Running basic tests ***\n");
@@ -61,3 +87,5 @@ int fetchline(char **line) {
   }
   return n;
 }
+
+int ls() { return 0; }

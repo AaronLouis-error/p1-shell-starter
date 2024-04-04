@@ -21,5 +21,9 @@ int interactiveShell();
 int runTests();
 void processLine(char *line);
 int main();
+int ls();
+
+const int MAX_COMMAND_LENGTH = 100;
+const int MAX_ARGS = 10;
 
 #endif
