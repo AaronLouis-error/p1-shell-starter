@@ -1,5 +1,7 @@
 #include "shell.h"
 
+char **arguments;
+
 int main(int argc, char **argv) {
   if (argc == 2 && equal(argv[1], "--interactive")) {
     return interactiveShell();
@@ -34,9 +36,11 @@ int interactiveShell() {
 
 void processLine(char *line) {
   printf("processing line: %s\n", line);
+  if (arguments == NULL) {
+    arguments = calloc(MAX_ARGS, sizeof(char *));
+  }
 
   // Tokonize
-  char *arguments[MAX_ARGS];
   tokenize(line, arguments);
 
   runProcess(arguments);
@@ -59,11 +63,14 @@ void processLine(char *line) {
 
 void tokenize(char *line, char **arguments) {
   // initalize array with NULL values
+  char *token;
+  token = strtok(line, " ");
+  if (token != NULL && equal(token, "!!")) {
+    return;
+  }
   for (int i = 0; i < MAX_ARGS; i++) {
     arguments[i] = NULL;
   }
-  char *token;
-  token = strtok(line, " ");
   arguments[0] = token;
   int i = 1;
   while (token != NULL) {
@@ -138,9 +145,9 @@ void runProcess(char **arguments) {
 
 int runTests() {
   printf("*** Running basic tests ***\n");
-  char lines[7][MAXLINE] = {
-      "ls",      "ls -al", "ls & whoami ;", "ls > junk.txt", "cat < junk.txt",
-      "ls | wc", "ascii"};
+  char lines[7][MAXLINE] = {"ls",     "ls -al",        "ls & whoami ;",
+                            "!!",     "ls > junk.txt", "cat < junk.txt",
+                            "ls | wc"};
   for (int i = 0; i < 7; i++) {
     printf("* %d. Testing %s *\n", i + 1, lines[i]);
     processLine(lines[i]);
