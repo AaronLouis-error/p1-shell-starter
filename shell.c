@@ -122,30 +122,34 @@ void runProcess(char **arguments) {
         // close(pipeFD[WRITE]);
         // dup2(pipeFD[READ], 0); // stdin is now child's write pipe
         close(pipeFD[READ]);
-        if (arguments[2] == "|") {
+        printf("t1\n");
+        if (equal(arguments[2], "|")) {
           // 1= stdout, anything going to stdout goes to pipeFD[Write]
           dup2(pipeFD[WRITE], 1);
           // stdout is now child's write pipe
           // the results of execlp is sent to stdout
         }
-        execlp(arguments[3], arguments[3], arguments[4], NULL);
+        printf("t2\n");
+        execlp(arguments[0], arguments[0], arguments[1], NULL);
         return;
       }
       // if bool(!oneProcess){
-      if (arguments[2] == ";" || arguments[2] == "|") {
+      if (equal(arguments[2], ";") || equal(arguments[2], "|")) {
         wait(NULL);
-        if (arguments[2] == "|") {
+        printf("Test\n");
+        if (equal(arguments[2], "|")) {
           close(pipeFD[WRITE]);
           char newArgsChars[BUF_SIZE];
           read(pipeFD[READ], newArgsChars, BUF_SIZE);
-          char *newArgs[MAX_ARGS];
+          char *newArgs[BUF_SIZE];
           tokenize(newArgsChars, newArgs);
-          execlp(newArgs[0], newArgs[0], newArgs[1], NULL);
+          execlp(arguments[3], newArgs, NULL);
         } else {
-          execlp(arguments[0], arguments[0], arguments[1], NULL);
+          execlp(arguments[3], arguments[3], arguments[4], NULL);
         }
       } else {
-        execlp(arguments[0], arguments[0], arguments[1], NULL);
+        execlp(arguments[3], arguments[3], arguments[4], NULL);
+        wait(NULL);
       }
     } else {
       execlp(arguments[0], arguments[0], arguments[1], NULL);
@@ -181,7 +185,9 @@ int runTests() {
 }
 
 // return true if C-strings are equal
-bool equal(char *a, char *b) { return (strcmp(a, b) == 0); }
+bool equal(char *a, char *b) {
+  return a != NULL && b != NULL && (strcmp(a, b) == 0);
+}
 
 // read a line from console
 // return length of line read or -1 if failed to read
