@@ -75,9 +75,13 @@ void tokenize(char *line, char **arguments) {
   int i = 1;
   while (token != NULL) {
     token = strtok(NULL, " ,\0");
-    if (token != NULL && i <= 2 &&
+    if (token != NULL &&
         (equal(token, "&") || equal(token, ";") || equal(token, "|"))) {
-      i = 2;
+      if (arguments[2] == NULL) {
+        i = 2;
+      } else {
+        continue;
+      }
     }
     arguments[i] = token;
     i++;
@@ -117,15 +121,35 @@ void runProcess(char **arguments) {
       if (pid == 0) { // Child of Child
         // close(pipeFD[WRITE]);
         // dup2(pipeFD[READ], 0); // stdin is now child's write pipe
-        execlp(arguments[3], arguments[4], NULL);
+        close(pipeFD[READ]);
+        if (arguments[2] == "|") {
+          // 1= stdout, anything going to stdout goes to pipeFD[Write]
+          dup2(pipeFD[WRITE], 1);
+          // stdout is now child's write pipe
+          // the results of execlp is sent to stdout
+        }
+        execlp(arguments[3], arguments[3], arguments[4], NULL);
         return;
       }
       // if bool(!oneProcess){
       if (arguments[2] == ";" || arguments[2] == "|") {
         wait(NULL);
+        if (arguments[2] == "|") {
+          close(pipeFD[WRITE]);
+          char newArgsChars[BUF_SIZE];
+          read(pipeFD[READ], newArgsChars, BUF_SIZE);
+          char *newArgs[MAX_ARGS];
+          tokenize(newArgsChars, newArgs);
+          execlp(newArgs[0], newArgs[0], newArgs[1], NULL);
+        } else {
+          execlp(arguments[0], arguments[0], arguments[1], NULL);
+        }
+      } else {
+        execlp(arguments[0], arguments[0], arguments[1], NULL);
       }
+    } else {
+      execlp(arguments[0], arguments[0], arguments[1], NULL);
     }
-    execlp(arguments[0], arguments[0], arguments[1], NULL);
     // process is overlayed so does not execut past here...
     //}
     // else{
