@@ -45,9 +45,35 @@ int child(char **args)
     }
   }
 
+  // ascii command
+  if (equal(args[0], "ascii"))
+  {
+    printf("         ,\n");
+    printf("        /|      __\n");
+    printf("       / |   ,-~ /\n");
+    printf("      Y :|  //  /\n");
+    printf("      | jj /( .^\n");
+    printf("      >-\"~\"-v\"\n");
+    printf("     /       Y\n");
+    printf("    jo  o    |\n");
+    printf("   ( ~T~     j\n");
+    printf("    >._-' _./\n");
+    printf("   /   \"~\"  |\n");
+    printf("  Y     _,  |\n");
+    printf(" /| ;-\"~ _  l\n");
+    printf("/ l/ ,-\"~    \\\n");
+    printf("\\//\\/      .- \\\n");
+    printf(" Y        /    Y    -Row\n");
+    printf(" l       I     !\\\n");
+    printf(" ]\\      _\\    /\"\\\n");
+    printf("(\" ~----( ~   Y.  )\n");
+    execlp("sleep", "sleep", "0");
+  }
+
   // call execvp on prepared arguments after while loop ends. You can modify
   // arguments as you loop over the arguments above.
-  execvp(args[0], args);
+  else
+    execvp(args[0], args);
   return -1;
 }
 
@@ -96,7 +122,7 @@ void doCommand(char **args, int start, int end, bool waitfor)
     child(subargs);
 
     // If execvp returns, an error occurred
-    perror("execvp");
+    // perror("execvp");
     exit(EXIT_FAILURE);
   }
   // Parent
@@ -249,7 +275,12 @@ bool processLine(char *line)
 
   if (equal(line, "!!"))
   {
-    // don't have to do anything here, handled by tokenize
+    // most of this is handled by tokenize
+    if (arguments[0] == NULL)
+    {
+      printf("No commands in history.\n");
+      fflush(stdout);
+    }
   }
 
   // todo: does this need to match what is in main?
@@ -279,7 +310,7 @@ bool processLine(char *line)
 int main()
 {
   // bool should_run = false; // loop until false
-  bool runTestsBool = true;
+  bool runTestsBool = false;
   arguments = calloc(MAX_ARGS, sizeof(char *));
   if (!runTestsBool)
   {
@@ -304,8 +335,6 @@ int interactiveShell()
     printf(PROMPT); // PROMPT is osh>
     fflush(stdout);
     int n = fetchline(&line);
-    printf("read: %s (length = %d)\n", line, n);
-    fflush(stdout);
     // ^D results in n == -1
     if (n == -1 || !processLine(line)) // exit ect. causes false process line
     {
@@ -322,7 +351,7 @@ int runTests()
   printf("*** Running basic tests ***\n");
   char lines[7][MAXLINE] = {"ls", "ls -al", "ls & whoami ;",
                             "!!", "ls > junk.txt", "cat < junk.txt",
-                            "ls | wc"};
+                            "ls | wc", "ascii"};
   for (int i = 0; i < 7; i++)
   {
     printf("* %d. Testing %s *\n", i + 1, lines[i]);
