@@ -27,6 +27,7 @@ void runProcess(char **arguments);
 
 const int MAX_COMMAND_LENGTH = 100;
 const int MAX_ARGS = 10;
+const int MAX_ARG_LENGTH = 100;
 const int BUF_SIZE = 1024;
 
 #endif

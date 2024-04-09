@@ -8,7 +8,7 @@ char **arguments;
 // on failure.  On success, does not return to caller.
 // ============================================================================
 int child(char **args) {
-  printf("here\n");
+  // printf("here\n");
   fflush(stdout);
   int i = 0;
   while (args[i] != NULL) {
@@ -51,12 +51,10 @@ int child(char **args) {
       ++i;
     }
   }
-  printf("here2");
-  fflush(stdout);
 
   // call execvp on prepared arguments after while loop ends. You can modify
   // arguments as you loop over the arguments above.
-  printf(args[0]);
+  // printf(args[0]);
   fflush(stdout);
   execvp(args[0], args);
   return -1;
@@ -76,14 +74,19 @@ void doCommand(char **args, int start, int end, bool waitfor) {
   // always execute your commands in child. so pass in arguments there
   // based on waitfor flag, in parent implement wait or not wait  based on & or
   // ;
+  // printf("1\n");
+  fflush(stdout);
   int subarraySize = end - start + 1;
 
   // Allocate memory for the subarray
-  int *subargs = (int *)malloc(subarraySize * sizeof(int));
+  char **subargs =
+      (char **)malloc(subarraySize * sizeof(char) * MAX_ARG_LENGTH);
   if (subargs == NULL) {
     fprintf(stderr, "Memory allocation failed\n");
     exit(EXIT_FAILURE);
   }
+  // printf("1\n");
+  fflush(stdout);
 
   // Copy elements from the original array to the subarray
   for (int i = start, j = 0; i <= end; i++, j++) {
@@ -262,7 +265,7 @@ char **tokenize(char *line) {
 // ============================================================================
 int main() {
   // bool should_run = false; // loop until false
-  bool runTestsBool = false;
+  bool runTestsBool = true;
   if (!runTestsBool) {
     interactiveShell();
   } else {
