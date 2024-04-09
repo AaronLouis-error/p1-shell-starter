@@ -1,10 +1,6 @@
 a.out
 junk.txt
-output.txt
-output.xt
-program
 runit.sh
 shell
 shell.c
 shell.h
-shell.h.gch
