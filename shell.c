@@ -14,19 +14,10 @@ int child(char **args)
   {
     if (equal(args[i], ">"))
     {
-      int fd = open(args[i + 1], O_WRONLY | O_CREAT | O_TRUNC, 0666);
-
-      if (fd == -1)
-      {
-        perror("Error opening file");
-        return 1;
-      }
-
       // Redirect stdout to the file
-      if (dup2(fd, STDOUT_FILENO) == -1)
+      if (freopen(args[i + 1], "w", stdout) == NULL)
       {
         perror("Error redirecting stdout");
-        close(fd);
         return 1;
       }
 
@@ -34,19 +25,10 @@ int child(char **args)
     }
     else if (equal(args[i], "<"))
     {
-      int fd = open(args[i + 1], O_WRONLY | O_CREAT | O_TRUNC, 0666);
-
-      if (fd == -1)
+      // Redirect stdin to the file
+      if (freopen(args[i + 1], "r", stdin) == NULL)
       {
-        perror("Error opening file");
-        return 1;
-      }
-
-      // Redirect stdout to the file
-      if (dup2(fd, STDIN_FILENO) == -1)
-      {
-        perror("Error redirecting stdin");
-        close(fd);
+        perror("Error redirecting stdout");
         return 1;
       }
 
@@ -297,7 +279,7 @@ bool processLine(char *line)
 int main()
 {
   // bool should_run = false; // loop until false
-  bool runTestsBool = true;
+  bool runTestsBool = false;
   arguments = calloc(MAX_ARGS, sizeof(char *));
   if (!runTestsBool)
   {
