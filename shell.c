@@ -268,76 +268,12 @@ int main() {
   } else {
     runTests();
   }
-  // arguments = calloc(MAX_ARGS, sizeof(char *));
-  // // printf("0\n");
-  // fflush(stdout);
-  // char *line = calloc(1, MAXLINE); // holds user input
-
-  // int start = 0; // index into args array
-  // // printf("0.5\n");
-  // // todo: should we transfer this code to interactive terminal??
-  // while (should_run) {
-  //   printf(PROMPT);   // osh>
-  //   fflush(stdout);   // because no "\n"
-  //   fetchline(&line); // fetch NUL-terminated line
-
-  //   // printf("1");
-  //   fflush(stdout);
-  //   if (equal(line, ""))
-  //     continue; // blank line
-
-  //   // printf("2\n");
-  //   fflush(stdout);
-  //   if (equal(line, "exit")) { // cheerio
-  //     should_run = false;
-  //     continue;
-  //   }
-  //   // printf("2.01\n");
-  //   fflush(stdout);
-
-  //   if (equal(line, "!!")) {
-  //     // don't have to do anything here, handled by tokenize
-  //   }
-  //   // printf("2.02\n");
-  //   fflush(stdout);
-
-  //   // process lines
-  //   char **args = tokenize(line); // split string into tokens
-  //   // printf("3\n");
-  //   fflush(stdout);
-  //   // loop over to find chunk of independent commands and execute
-  //   while (args[start] != NULL) {
-  //     int end;
-  //     // // printf("4\n");
-  //     fflush(stdout);
-  //     bool waitfor = parse(
-  //         args, start,
-  //         &end); // parse() checks if current command ends with ";" or "&"
-  //                // or nothing. if it does not end with anything treat it
-  //                // as ; or blocking call. Parse updates "end" to the index
-  //                // of the last token before ; or & or simply nothing
-  //     // printf("5\n");
-  //     fflush(stdout);
-  //     doCommand(args, start, end, waitfor); // execute sub-command
-  //     start = end + 2;                      // next command
-  //   }
-  //   start = 0; // next line
-  //   // remember current command into history
-  // }
   return 0;
 }
 
-/*int main(int argc, char **argv) {
-  if (argc == 2 && equal(argv[1], "--interactive")) {
-    return interactiveShell();
-  } else {
-    return runTests();
-  }
-}*/
-
 // interactive shell to process commands
 int interactiveShell() {
-  printf("interactive Shell");
+  printf("interactive Shell\n");
   bool should_run = true;
   arguments = calloc(MAX_ARGS, sizeof(char *));
   fflush(stdout);
@@ -371,7 +307,29 @@ int interactiveShell() {
     // printf("2.02\n");
 
     // todo: does this need to match what is in main?
-    processLine(line);
+    // processLine(line);
+    // process lines
+    char **args = tokenize(line); // split string into tokens
+    // printf("3\n");
+    fflush(stdout);
+    // loop over to find chunk of independent commands and execute
+    while (args[start] != NULL) {
+      int end;
+      // // printf("4\n");
+      fflush(stdout);
+      bool waitfor = parse(
+          args, start,
+          &end); // parse() checks if current command ends with ";" or "&"
+                 // or nothing. if it does not end with anything treat it
+                 // as ; or blocking call. Parse updates "end" to the index
+                 // of the last token before ; or & or simply nothing
+      // printf("5\n");
+      fflush(stdout);
+      doCommand(args, start, end, waitfor); // execute sub-command
+      start = end + 2;                      // next command
+    }
+    start = 0; // next line
+    // remember current command into history
   }
   free(line);
   return 0;
