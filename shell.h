@@ -19,7 +19,7 @@ bool equal(char *a, char *b);
 int fetchline(char **line);
 int interactiveShell();
 int runTests();
-void processLine(char *line);
+bool processLine(char *line);
 int main();
 int ls();
 // void tokenize(char *line, char **arguments);
