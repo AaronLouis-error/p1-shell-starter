@@ -28,7 +28,7 @@ int child(char **args)
       // Redirect stdin to the file
       if (freopen(args[i + 1], "r", stdin) == NULL)
       {
-        perror("Error redirecting stdout");
+        perror("Error redirecting stdin");
         return 1;
       }
 
@@ -279,7 +279,7 @@ bool processLine(char *line)
 int main()
 {
   // bool should_run = false; // loop until false
-  bool runTestsBool = false;
+  bool runTestsBool = true;
   arguments = calloc(MAX_ARGS, sizeof(char *));
   if (!runTestsBool)
   {
