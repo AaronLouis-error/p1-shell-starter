@@ -19,7 +19,7 @@ int main();
 
 int child(char **args);
 void doCommand(char **args, int start, int end, bool waitfor);
-int doPipe(char **args, int pipei, int start);
+int doPipe(char **args, int pipei, int start, bool isBackquote);
 bool parse(char **args, int start, int *end);
 char **tokenize(char *line);
 bool processLine(char *line);

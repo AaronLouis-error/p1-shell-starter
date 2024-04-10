@@ -50,7 +50,7 @@ int child(char **args)
       }
       args[i] = NULL;
     } else if (equal(args[i], "|")) {
-      doPipe(args, i, 0);
+      doPipe(args, i, 0, false);
     } else { ++i; 
     }
   }
@@ -121,7 +121,7 @@ void doCommand(char **args, int start, int end, bool waitfor)
 //
 // The parent will write, via a pipe, to the child
 // ============================================================================
-int doPipe(char **args, int pipei, int start)
+int doPipe(char **args, int pipei, int start, bool isBackquote)
 {
   enum { READ, WRITE };
   char *parentArgs[pipei + 1];
@@ -143,25 +143,28 @@ int doPipe(char **args, int pipei, int start)
     exit(EXIT_FAILURE);
   }
 
-  if (pid == 0)
-  { // Child
+  if (pid == 0) { // Child
     close(pipefd[WRITE]);
-    if (dup2(pipefd[0], STDIN_FILENO) == -1)
-    {
+    if (dup2(pipefd[0], STDIN_FILENO) == -1) {
       perror("Error redirecting stdin");
       exit(EXIT_FAILURE);
     }
 
+    if (isBackquote) execvp(args[start], &args[start]);
+
     // Multi-Piping
-    for (int i = pipei + 1; args[i] != NULL; i++)
-    {
-      if (equal(args[i], "|"))
-      {
-        printf("Here\n");
-        fflush(stdout);
+    for (int i = pipei + 1; args[i] != NULL; i++) {
+      if (equal(args[i], "|")) {
         args[i] = NULL;
-        doPipe(args, i, pipei + 1);
+        doPipe(args, i, pipei + 1, false);
         return;
+      }
+      if (*args[i] == '`') {
+        for (int j = 0; j < strlen(args[i]) - 1; j++) {
+            args[i][j] = args[i][j + 1];
+        }
+        args[i][strlen(args[i]) - 1] = '\0';
+        doPipe(args, i, pipei + 1, true);
       }
     }
 
@@ -181,6 +184,7 @@ int doPipe(char **args, int pipei, int start)
     }
 
     close(pipefd[1]);
+    if (isBackquote) execlp(args[pipei], args[pipei]);
     execvp(parentArgs[start], &parentArgs[start]);
     perror("Parent Piping execvp"); // If execvp returns, an error occurred
     exit(EXIT_FAILURE);
