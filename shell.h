@@ -15,15 +15,19 @@
 #define RD 0
 #define WR 1
 
-bool equal(char *a, char *b);
-int fetchline(char **line);
+int main();
+
+int child(char **args);
+void doCommand(char **args, int start, int end, bool waitfor);
+int doPipe(char **args, int pipei, int start);
+bool parse(char **args, int start, int *end);
+char **tokenize(char *line);
+bool processLine(char *line);
 int interactiveShell();
 int runTests();
-bool processLine(char *line);
-int main();
-int ls();
-// void tokenize(char *line, char **arguments);
-void runProcess(char **arguments);
+bool equal(char *a, char *b);
+int fetchline(char **line);
+void asciiArt();
 
 const int MAX_COMMAND_LENGTH = 100;
 const int MAX_ARGS = 10;

@@ -3,6 +3,22 @@
 char **arguments;
 
 // ============================================================================
+// Main loop for our Unix shell interpreter
+// ============================================================================
+int main()
+{
+  // bool should_run = false; // loop until false
+  bool runTestsBool = false;
+  arguments = calloc(MAX_ARGS, sizeof(char *));
+  if (!runTestsBool) { 
+    interactiveShell();
+  } else {
+    runTests();
+  }
+  return 0;
+}
+
+// ============================================================================
 // Execute a child process.
 // Returns -1
 // on failure.  On success, does not return to caller.
@@ -10,71 +26,43 @@ char **arguments;
 int child(char **args)
 {
   int i = 0;
-  while (args[i] != NULL)
-  {
-    if (equal(args[i], ">"))
-    {
+  /*
+  while (args[i] != NULL) {
+    if (*args[i] == '`') {
+      
+    }
+    i++;
+  }
+  i = 0;*/
+  while (args[i] != NULL) {
+    if (equal(args[i], ">")) {
       // Redirect stdout to the file
-      if (freopen(args[i + 1], "w", stdout) == NULL)
-      {
+      if (freopen(args[i + 1], "w", stdout) == NULL) {
         perror("Error redirecting stdout");
         return 1;
       }
-
       args[i] = NULL;
-    }
-    else if (equal(args[i], "<"))
-    {
+    } else if (equal(args[i], "<")) {
       // Redirect stdin to the file
-      if (freopen(args[i + 1], "r", stdin) == NULL)
-      {
+      if (freopen(args[i + 1], "r", stdin) == NULL) {
         perror("Error redirecting stdin");
         return 1;
       }
-
       args[i] = NULL;
-    }
-    else if (equal(args[i], "|"))
-    {
-      // do pipe in a separate function
-      doPipe(args, i);
-    }
-    else
-    {
-      ++i;
+    } else if (equal(args[i], "|")) {
+      doPipe(args, i, 0);
+    } else { ++i; 
     }
   }
 
   // ascii command
-  if (equal(args[0], "ascii"))
-  {
-    printf("         ,\n");
-    printf("        /|      __\n");
-    printf("       / |   ,-~ /\n");
-    printf("      Y :|  //  /\n");
-    printf("      | jj /( .^\n");
-    printf("      >-\"~\"-v\"\n");
-    printf("     /       Y\n");
-    printf("    jo  o    |\n");
-    printf("   ( ~T~     j\n");
-    printf("    >._-' _./\n");
-    printf("   /   \"~\"  |\n");
-    printf("  Y     _,  |\n");
-    printf(" /| ;-\"~ _  l\n");
-    printf("/ l/ ,-\"~    \\\n");
-    printf("\\//\\/      .- \\\n");
-    printf(" Y        /    Y    -Row\n");
-    printf(" l       I     !\\\n");
-    printf(" ]\\      _\\    /\"\\\n");
-    printf("(\" ~----( ~   Y.  )\n");
-    execlp("sleep", "sleep", "0");
-  }
-
-  // call execvp on prepared arguments after while loop ends. You can modify
-  // arguments as you loop over the arguments above.
-  else
+  if (equal(args[0], "ascii")) { asciiArt();
+  } else {
     execvp(args[0], args);
-  return -1;
+    // call execvp on prepared arguments after while loop ends. You can modify
+    // arguments as you loop over the arguments above.
+    return -1;
+  }
 }
 
 // ============================================================================
@@ -88,46 +76,35 @@ int child(char **args)
 // ============================================================================
 void doCommand(char **args, int start, int end, bool waitfor)
 {
-  // you will have your classic fork() like implementation here.
-  // always execute your commands in child. so pass in arguments there
-  // based on waitfor flag, in parent implement wait or not wait  based on & or
-  // ;
   int subarraySize = end - start + 1;
 
   // Allocate memory for the subarray
-  char **subargs =
-      (char **)malloc(subarraySize * sizeof(char) * MAX_ARG_LENGTH);
-  if (subargs == NULL)
-  {
+  char **subargs = 
+    (char **)malloc(subarraySize * sizeof(char) * MAX_ARG_LENGTH);
+  if (subargs == NULL) {
     fprintf(stderr, "Memory allocation failed\n");
     exit(EXIT_FAILURE);
   }
 
   // Copy elements from the original array to the subarray
-  for (int i = start, j = 0; i <= end; i++, j++)
-  {
+  for (int i = start, j = 0; i <= end; i++, j++) {
     subargs[j] = args[i];
   }
 
   int pid = fork();
-  if (pid < 0)
-  {
+  if (pid < 0) {
     perror("Error during fork");
     exit(EXIT_FAILURE);
   }
 
-  if (pid == 0)
-  { // Child
+  if (pid == 0) { // Child
     // Execute in the child function
     child(subargs);
-
     // If execvp returns, an error occurred
-    // perror("execvp");
     exit(EXIT_FAILURE);
   }
   // Parent
-  if (waitfor)
-  {
+  if (waitfor) {
     wait(NULL);
   }
 }
@@ -144,31 +121,24 @@ void doCommand(char **args, int start, int end, bool waitfor)
 //
 // The parent will write, via a pipe, to the child
 // ============================================================================
-int doPipe(char **args, int pipei)
+int doPipe(char **args, int pipei, int start)
 {
-  enum
-  {
-    READ,
-    WRITE
-  };
+  enum { READ, WRITE };
   char *parentArgs[pipei + 1];
 
-  for (int i = 0; i < pipei; i++)
-  {
+  for (int i = 0; i < pipei; i++) {
     parentArgs[i] = args[i];
   }
   parentArgs[pipei] = NULL; // NULL terminate parentArgs array
 
   int pipefd[2];
-  if (pipe(pipefd) == -1)
-  {
+  if (pipe(pipefd) == -1) {
     perror("Error creating pipe");
     exit(EXIT_FAILURE);
   }
 
   int pid = fork();
-  if (pid < 0)
-  {
+  if (pid < 0) {
     perror("Error during fork");
     exit(EXIT_FAILURE);
   }
@@ -182,7 +152,20 @@ int doPipe(char **args, int pipei)
       exit(EXIT_FAILURE);
     }
 
-    close(pipefd[READ]);
+    // Multi-Piping
+    for (int i = pipei + 1; args[i] != NULL; i++)
+    {
+      if (equal(args[i], "|"))
+      {
+        printf("Here\n");
+        fflush(stdout);
+        args[i] = NULL;
+        doPipe(args, i, pipei + 1);
+        return;
+      }
+    }
+
+    //    close(pipefd[READ]);
     execvp(args[pipei + 1], &args[pipei + 1]);
 
     perror("Child Piping execvp"); // if execvp returns then error occurred
@@ -191,7 +174,6 @@ int doPipe(char **args, int pipei)
   else
   { // Parent process
     close(pipefd[READ]);
-
     if (dup2(pipefd[WRITE], STDOUT_FILENO) == -1)
     {
       perror("Error redirecting stdout");
@@ -199,7 +181,7 @@ int doPipe(char **args, int pipei)
     }
 
     close(pipefd[1]);
-    execvp(parentArgs[0], parentArgs);
+    execvp(parentArgs[start], &parentArgs[start]);
     perror("Parent Piping execvp"); // If execvp returns, an error occurred
     exit(EXIT_FAILURE);
   }
@@ -259,6 +241,9 @@ char **tokenize(char *line)
   return arguments;
 }
 
+// ============================================================================
+// this method processes a line and executes the commands in the line
+// ============================================================================
 bool processLine(char *line)
 {
 
@@ -283,8 +268,6 @@ bool processLine(char *line)
     }
   }
 
-  // todo: does this need to match what is in main?
-  // processLine(line);
   // process lines
   char **args = tokenize(line); // split string into tokens
   // loop over to find chunk of independent commands and execute
@@ -305,25 +288,8 @@ bool processLine(char *line)
 }
 
 // ============================================================================
-// Main loop for our Unix shell interpreter
-// ============================================================================
-int main()
-{
-  // bool should_run = false; // loop until false
-  bool runTestsBool = false;
-  arguments = calloc(MAX_ARGS, sizeof(char *));
-  if (!runTestsBool)
-  {
-    interactiveShell();
-  }
-  else
-  {
-    runTests();
-  }
-  return 0;
-}
-
 // interactive shell to process commands
+// ============================================================================
 int interactiveShell()
 {
   printf("interactive Shell\n");
@@ -346,6 +312,9 @@ int interactiveShell()
   return 0;
 }
 
+// ============================================================================
+//This is a test funtion created to run some of the functions we have implemented
+// ============================================================================
 int runTests()
 {
   printf("*** Running basic tests ***\n");
@@ -361,15 +330,19 @@ int runTests()
   return 0;
 }
 
+// ============================================================================
 // return true if C-strings are equal
+// ============================================================================
 bool equal(char *a, char *b)
 {
   return a != NULL && b != NULL && (strcmp(a, b) == 0);
 }
 
+// ============================================================================
 // read a line from console
 // return length of line read or -1 if failed to read
 // removes the \n on the line read
+// ============================================================================
 int fetchline(char **line)
 {
   size_t len = 0;
@@ -379,4 +352,31 @@ int fetchline(char **line)
     (*line)[n - 1] = '\0';
   }
   return n;
+}
+
+//=============================================================================
+// A method that prints out a rabbit to the terminal
+//=============================================================================
+void asciiArt()
+{
+  printf("         ,\n");
+  printf("        /|      __\n");
+  printf("       / |   ,-~ /\n");
+  printf("      Y :|  //  /\n");
+  printf("      | jj /( .^\n");
+  printf("      >-\"~\"-v\"\n");
+  printf("     /       Y\n");
+  printf("    jo  o    |\n");
+  printf("   ( ~T~     j\n");
+  printf("    >._-' _./\n");
+  printf("   /   \"~\"  |\n");
+  printf("  Y     _,  |\n");
+  printf(" /| ;-\"~ _  l\n");
+  printf("/ l/ ,-\"~    \\\n");
+  printf("\\//\\/      .- \\\n");
+  printf(" Y        /    Y    -Row\n");
+  printf(" l       I     !\\\n");
+  printf(" ]\\      _\\    /\"\\\n");
+  printf("(\" ~----( ~   Y.  )\n");
+  execlp("sleep", "sleep", "0");
 }
