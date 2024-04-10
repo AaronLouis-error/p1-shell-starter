@@ -7,8 +7,7 @@ char **arguments;
 // ============================================================================
 int main()
 {
-  // bool should_run = false; // loop until false
-  bool runTestsBool = false;
+  bool runTestsBool = true;
   arguments = calloc(MAX_ARGS, sizeof(char *));
   if (!runTestsBool) { 
     interactiveShell();
@@ -50,7 +49,7 @@ int child(char **args)
       }
       args[i] = NULL;
     } else if (equal(args[i], "|")) {
-      doPipe(args, i, 0, false);
+      doPipe(args, i, 0);
     } else { ++i; 
     }
   }
@@ -110,6 +109,60 @@ void doCommand(char **args, int start, int end, bool waitfor)
 }
 
 // ============================================================================
+// Removes the backticks from the command and executes the command inside the
+// backticks. Returns the result of the command.
+// Note: only works for single-word commands and only returns a single string.
+// ============================================================================
+char *doBacktick(char **args, int index)
+{
+  enum { READ, WRITE };
+  char command[strlen(args[index]) - 2];
+  for (int j = 1; j < strlen(args[index]) - 1; j++) {
+      command[j - 1] = args[index][j];
+  }
+  command[strlen(command)] = '\0';
+
+  int pipefd[2];
+  if (pipe(pipefd) == -1) {
+    perror("Error creating pipe");
+    exit(EXIT_FAILURE);
+  }
+
+  int pid = fork();
+  if (pid < 0) {
+    perror("Error during fork");
+    exit(EXIT_FAILURE);
+  }
+
+  if (pid == 0) { // Child
+    close(pipefd[READ]);
+    if (dup2(pipefd[1], STDOUT_FILENO) == -1) {
+      perror("Error redirecting stdout");
+      exit(EXIT_FAILURE);
+    }
+    execlp(command, command, NULL);
+    perror("Child Piping execvp"); // if execvp returns then error occurred
+    exit(EXIT_FAILURE);
+  } else { // Parent process
+  
+    close(pipefd[WRITE]);
+    int original_stdin = dup(STDIN_FILENO);
+    if (dup2(pipefd[0], STDIN_FILENO) == -1) {
+      perror("Error redirecting stdin");
+      exit(EXIT_FAILURE);
+    }
+    dup2(original_stdin, STDIN_FILENO); // Restore the original stdin
+    close(original_stdin);
+    char *result = (char *)malloc(BUF_SIZE);
+    read(pipefd[0], result, BUF_SIZE);
+    result[strlen(result) - 1] = '\0'; // remove newline character from result
+    printf("Result: %s\n", result);
+    close(pipefd[0]);
+    return result;
+  }
+}
+
+// ============================================================================
 // Execute the two commands in 'args' connected by a pipe at args[pipei].
 // For example, with
 //   args = {"ls" "-a", "|", "wc""}
@@ -121,7 +174,7 @@ void doCommand(char **args, int start, int end, bool waitfor)
 //
 // The parent will write, via a pipe, to the child
 // ============================================================================
-int doPipe(char **args, int pipei, int start, bool isBackquote)
+int doPipe(char **args, int pipei, int start)
 {
   enum { READ, WRITE };
   char *parentArgs[pipei + 1];
@@ -150,21 +203,15 @@ int doPipe(char **args, int pipei, int start, bool isBackquote)
       exit(EXIT_FAILURE);
     }
 
-    if (isBackquote) execvp(args[start], &args[start]);
-
     // Multi-Piping
     for (int i = pipei + 1; args[i] != NULL; i++) {
       if (equal(args[i], "|")) {
         args[i] = NULL;
-        doPipe(args, i, pipei + 1, false);
-        return;
+        doPipe(args, i, pipei + 1);
+        return 0;
       }
       if (*args[i] == '`') {
-        for (int j = 0; j < strlen(args[i]) - 1; j++) {
-            args[i][j] = args[i][j + 1];
-        }
-        args[i][strlen(args[i]) - 1] = '\0';
-        doPipe(args, i, pipei + 1, true);
+        args[i] = doBacktick(args, i);
       }
     }
 
@@ -184,7 +231,6 @@ int doPipe(char **args, int pipei, int start, bool isBackquote)
     }
 
     close(pipefd[1]);
-    if (isBackquote) execlp(args[pipei], args[pipei]);
     execvp(parentArgs[start], &parentArgs[start]);
     perror("Parent Piping execvp"); // If execvp returns, an error occurred
     exit(EXIT_FAILURE);
@@ -322,10 +368,11 @@ int interactiveShell()
 int runTests()
 {
   printf("*** Running basic tests ***\n");
-  char lines[7][MAXLINE] = {"ls", "ls -al", "ls & whoami ;",
+  char lines[9][MAXLINE] = {"ls", "ls -al", "ls & whoami ;",
                             "!!", "ls > junk.txt", "cat < junk.txt",
-                            "ls | wc", "ascii"};
-  for (int i = 0; i < 7; i++)
+                            "ls | wc", "ascii",
+                            "ps auxf | cat | tac | cat | tac | grep `whoami`"};
+  for (int i = 0; i < 9; i++)
   {
     printf("* %d. Testing %s *\n", i + 1, lines[i]);
     processLine(lines[i]);
