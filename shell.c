@@ -7,7 +7,7 @@ char **arguments;
 // ============================================================================
 int main()
 {
-  bool runTestsBool = true;
+  bool runTestsBool = false;
   arguments = calloc(MAX_ARGS, sizeof(char *));
   if (!runTestsBool) { 
     interactiveShell();
